@@ -1,3 +1,4 @@
+
 #include "audio_transport.hpp"
 
 #include <algorithm>
@@ -13,26 +14,45 @@ int main()
 {
     constexpr std::uint32_t FRAMES_PER_BLOCK = 480;
     constexpr std::uint32_t CHANNELS = 2;
+    constexpr int CONNECTION_TIMEOUT_SECONDS = 60;
 
     dawlink::AudioTransport transport;
     std::string error;
 
     std::cout << "DAW LINK test receiver starting...\n";
+    std::cout << "Waiting for DAW LINK sender...\n";
 
-    if (!transport.Open(
-            L"Local\\DAW_LINK_Phase1",
-            &error))
+    const auto connectionStart = std::chrono::steady_clock::now();
+    bool connected = false;
+
+    while (std::chrono::steady_clock::now() - connectionStart <
+           std::chrono::seconds(CONNECTION_TIMEOUT_SECONDS))
     {
-        std::cerr << "Could not connect to DAW LINK sender: "
-                  << error << '\n';
+        error.clear();
 
-        std::cerr << "Start test_sender.exe first, then try again.\n";
+        if (transport.Open(L"Local\\DAW_LINK_Phase1", &error))
+        {
+            connected = true;
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+
+    if (!connected)
+    {
+        std::cerr << "\nConnection timed out after "
+                  << CONNECTION_TIMEOUT_SECONDS << " seconds.\n";
+        std::cerr << "Make sure test_sender.exe is running.\n";
+        if (!error.empty())
+            std::cerr << "Last error: " << error << '\n';
+
         return 1;
     }
 
     const auto config = transport.GetConfig();
 
-    std::cout << "Connected to DAW LINK!\n";
+    std::cout << "\nConnected to DAW LINK!\n";
     std::cout << "Sample rate: " << config.sampleRate << " Hz\n";
     std::cout << "Channels: " << config.channels << '\n';
     std::cout << "Buffer capacity: "
