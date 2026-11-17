@@ -502,7 +502,7 @@ namespace dawlink
         if (!IsOpen())
             return stats;
 
-        const auto* header = implementation_->header;
+        auto* header = implementation_->header;
 
         const std::uint64_t written =
             static_cast<std::uint64_t>(
