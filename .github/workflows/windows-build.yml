@@ -1,0 +1,42 @@
+
+name: Build DAW LINK (Windows x64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Windows executables
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Compile DAW LINK
+        run: cmake --build build --config Release --parallel
+
+      - name: Create release package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+
+          Copy-Item build/Release/dawlink_test_sender.exe package/
+          Copy-Item build/Release/dawlink_test_receiver.exe package/
+          Copy-Item README.md package/
+
+          Compress-Archive -Path package/* -DestinationPath DAW_LINK_Phase1_Windows_x64.zip -Force
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAW_LINK_Phase1_Windows_x64
+          path: DAW_LINK_Phase1_Windows_x64.zip
+          if-no-files-found: error
+          retention-days: 14
