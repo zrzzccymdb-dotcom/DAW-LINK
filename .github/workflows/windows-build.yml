@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build Windows executables
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Check out source code
